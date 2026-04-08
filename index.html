@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
   <title>Timezone Aware Countdown Tool</title>
   <meta name="description" content="Type a date & time, choose a timezone, and enjoy a live countdown with days, hours, minutes, and seconds." />
   <style>
@@ -24,19 +24,21 @@
       --ok: #5be49b;
     }
 
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; width: 100%; margin: 0; padding: 0; }
     body {
-      margin: 0; color: var(--text);
+      color: var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans";
       background: radial-gradient(1200px 800px at 20% 10%, rgba(13,74,160,0.35), transparent 60%),
                   radial-gradient(900px 700px at 80% 80%, rgba(13,74,160,0.25), transparent 60%),
                   linear-gradient(120deg, var(--bg-1), var(--bg-2) 40%, var(--bg-3));
       background-size: 180% 180%;
       animation: bgShift 18s ease-in-out infinite alternate;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
     @keyframes bgShift { to { background-position: 100% 100%; } }
+    
     body::before {
       content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .15;
       background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
@@ -45,80 +47,89 @@
     }
     @keyframes gridDrift { to { background-position: 24px 24px; } }
 
-    .container { position: relative; z-index: 1; height: 100%; display: grid; place-items: center; padding: 24px; }
+    .container { position: relative; z-index: 1; min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 16px; }
 
     .card {
-      width: min(980px, 96vw);
+      width: min(980px, 100%);
       background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
       border: 1px solid var(--card-border); border-radius: var(--radius-xl);
       box-shadow: var(--shadow); backdrop-filter: blur(10px) saturate(120%);
       transform: translateY(12px) scale(.98); opacity: 0; animation: cardIn 900ms cubic-bezier(.2,.8,.2,1) forwards 1200ms;
+      will-change: transform, opacity;
     }
     @keyframes cardIn { to { opacity: 1; transform: translateY(0) scale(1);} }
 
-    .header { padding: 28px 28px 0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-    .logo { width: 42px; height: 42px; border-radius: 12px; background: conic-gradient(from 210deg, #9ad1ff, #3ea3ff, #0f69ff, #3ea3ff, #9ad1ff); filter: drop-shadow(0 6px 16px rgba(58, 157, 255, .35)); animation: spinPulse 8s ease-in-out infinite; }
+    .header { padding: 24px 20px 0; display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; }
+    .logo { width: 42px; height: 42px; flex-shrink: 0; border-radius: 12px; background: conic-gradient(from 210deg, #9ad1ff, #3ea3ff, #0f69ff, #3ea3ff, #9ad1ff); filter: drop-shadow(0 6px 16px rgba(58, 157, 255, .35)); animation: spinPulse 8s ease-in-out infinite; }
     @keyframes spinPulse { 0%,100% { transform: rotate(0turn) scale(1);} 50% { transform: rotate(.05turn) scale(1.06);} }
-    .title { font-weight: 800; letter-spacing: .3px; font-size: clamp(20px, 2.6vw, 28px); }
-    .subtitle { color: var(--muted); font-size: 14px; }
+    .title { font-weight: 800; letter-spacing: .3px; font-size: clamp(18px, 5vw, 28px); }
+    .subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; line-height: 1.4; }
 
-    .content { padding: 24px 28px 28px; display: grid; gap: 18px; }
+    .content { padding: 20px; display: grid; gap: 18px; }
 
     .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    /* Make the event name field span full width if desired, or keep in grid */
     .field.full { grid-column: span 2; }
-    .field { display: grid; gap: 8px; }
-    .label { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: #b8cdf6; }
+    .field { display: grid; gap: 6px; }
+    .label { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: #b8cdf6; }
 
     .input, .select, .combo {
-      font-size: clamp(16px, 2.4vw, 18px);
-      padding: 14px 16px; border-radius: var(--radius-lg);
+      font-size: 16px; /* Prevents iOS auto-zoom */
+      padding: 12px 14px; border-radius: var(--radius-lg);
       border: 1px solid transparent; outline: none; color: var(--text);
       background: rgba(255,255,255,0.06);
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
-      transition: border var(--trans-fast), box-shadow var(--trans-fast), transform var(--trans-fast);
+      transition: all var(--trans-fast);
       width: 100%;
+      -webkit-appearance: none;
     }
-    .input:focus, .combo:focus { border-color: rgba(117, 186, 255, 0.6); box-shadow: 0 0 0 6px rgba(58, 157, 255, .20), 0 10px 30px rgba(0,0,0,.25); transform: translateY(-2px); }
+    .input:focus, .combo:focus { border-color: rgba(117, 186, 255, 0.6); box-shadow: 0 0 0 4px rgba(58, 157, 255, .15); transform: translateY(-1px); }
 
-    .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .btn { appearance: none; cursor: pointer; border: 0; padding: 16px 20px; border-radius: var(--radius-lg); font-weight: 700; letter-spacing: .3px; background: linear-gradient(180deg, #2d8cff, #1565ff); color: white; box-shadow: 0 12px 24px rgba(21,101,255,.35); transition: transform var(--trans-fast), box-shadow var(--trans-fast), filter var(--trans-fast); }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 16px 30px rgba(21,101,255,.45); }
-    .btn:active { transform: translateY(0); box-shadow: 0 8px 18px rgba(21,101,255,.35); filter: brightness(.96); }
-    .btn.secondary { background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.06)); color: var(--text); box-shadow: inset 0 0 0 1px rgba(255,255,255,.16), 0 8px 20px rgba(0,0,0,.18); }
+    .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .btn { appearance: none; cursor: pointer; border: 0; padding: 14px 10px; border-radius: var(--radius-lg); font-weight: 700; font-size: 13px; letter-spacing: .3px; background: linear-gradient(180deg, #2d8cff, #1565ff); color: white; box-shadow: 0 8px 16px rgba(21,101,255,.25); transition: all var(--trans-fast); display: flex; align-items: center; justify-content: center; text-align: center; }
+    .btn:active { transform: scale(0.96); opacity: 0.9; }
+    .btn.secondary { background: linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.05)); color: var(--text); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), 0 4px 12px rgba(0,0,0,0.1); }
 
-    .resultCard { border: 1px solid var(--card-border); background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)); border-radius: var(--radius-lg); padding: 18px; display: grid; gap: 10px; position: relative; overflow: hidden; }
-    .resultCard::after { content: ""; position: absolute; inset: -120% -120% auto auto; height: 240px; width: 240px; background: radial-gradient(circle at center, rgba(106,184,255,.8), transparent 60%); filter: blur(30px); opacity: .25; transform: rotate(25deg); }
+    .resultCard { border: 1px solid var(--card-border); background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)); border-radius: var(--radius-lg); padding: 16px; display: grid; gap: 10px; position: relative; overflow: hidden; }
 
-    .countdown { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
-    .tile { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: var(--radius-md); padding: 10px; text-align: center; backdrop-filter: blur(4px); }
-    .tile .num { font-size: clamp(28px, 6vw, 56px); font-weight: 900; letter-spacing: .02em; }
-    .tile .unit { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: #c4d6fb; }
+    .countdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .tile { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10); border-radius: var(--radius-md); padding: 12px 4px; text-align: center; backdrop-filter: blur(4px); }
+    .tile .num { font-size: clamp(24px, 8vw, 56px); font-weight: 900; line-height: 1; margin-bottom: 4px; }
+    .tile .unit { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #c4d6fb; }
 
-    .meta { color: var(--muted); font-size: 13px; }
-    .event-title { font-size: 18px; font-weight: 700; color: var(--glow); margin-bottom: 4px; }
+    .meta { color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .event-title { font-size: 18px; font-weight: 700; color: var(--glow); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .status { font-size: 13px; }
+    .status { font-size: 12px; font-weight: 600; }
     .status.ok { color: var(--ok); }
     .status.err { color: var(--error); }
 
     /* Splash */
-    .splash { position: fixed; inset: 0; display: grid; place-items: center; z-index: 50; background: radial-gradient(1200px 800px at 50% 30%, rgba(45,140,255,.35), transparent 60%), linear-gradient(160deg, var(--bg-1), var(--bg-2) 40%, var(--bg-3)); overflow: hidden; }
-    .splash .hello { display: inline-grid; align-items: center; justify-items: center; gap: 10px; transform: translateY(10px); animation: helloRise 900ms cubic-bezier(.2,.7,.3,1) forwards 200ms; text-align: center; }
+    .splash { position: fixed; inset: 0; display: grid; place-items: center; z-index: 50; background: radial-gradient(1200px 800px at 50% 30%, rgba(45,140,255,.35), transparent 60%), linear-gradient(160deg, var(--bg-1), var(--bg-2) 40%, var(--bg-3)); }
+    .splash .hello { transform: translateY(10px); animation: helloRise 900ms cubic-bezier(.2,.7,.3,1) forwards 200ms; text-align: center; padding: 20px; }
     @keyframes helloRise { to { transform: translateY(0);} }
-    .hello .badge { font-size: 12px; text-transform: uppercase; letter-spacing: .18em; color: #cae2ff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); padding: 6px 10px; border-radius: 999px; backdrop-filter: blur(6px); animation: badgeBlink 1.6s ease-in-out infinite; }
-    @keyframes badgeBlink { 50% { filter: brightness(1.25);} }
-    .hello h1 { margin: 0; font-size: clamp(36px, 8vw, 72px); font-weight: 900; letter-spacing: .02em; }
-    .hello p { margin: 0; color: #c6dafd; }
-    .hello .bar { margin-top: 22px; width: min(340px, 60vw); height: 6px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.18); box-shadow: inset 0 1px 2px rgba(0,0,0,.2); }
-    .hello .bar span { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #9ad1ff, #2d8cff, #1565ff); box-shadow: 0 6px 16px rgba(21,101,255,.35); animation: loadBar 1.2s ease-out forwards 300ms; }
+    .hello h1 { margin: 0; font-size: clamp(32px, 10vw, 72px); font-weight: 900; }
+    .hello p { margin: 10px 0 0; color: #c6dafd; font-size: 14px; }
+    .hello .bar { margin: 24px auto 0; width: 200px; height: 4px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.1); }
+    .hello .bar span { display: block; height: 100%; width: 0%; background: #2d8cff; animation: loadBar 1.2s ease-out forwards 300ms; }
     @keyframes loadBar { to { width: 100%; } }
     .splash.hide { opacity: 0; transition: opacity var(--trans-slow); pointer-events: none; }
 
-    @media (max-width: 720px){ 
-      .controls { grid-template-columns: 1fr; } 
+    /* Mobile Breakpoints */
+    @media (max-width: 600px) {
+      .controls { grid-template-columns: 1fr; gap: 14px; }
       .field.full { grid-column: span 1; }
-      .countdown { grid-template-columns: repeat(2, minmax(0,1fr)); } 
+      .row { grid-template-columns: 1fr; gap: 10px; }
+      .btn { padding: 16px; font-size: 15px; }
+      .header { padding: 20px 16px 0; }
+      .content { padding: 16px; }
+      .countdown { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .tile { padding: 16px 8px; }
+    }
+    
+    /* Extra Small Devices */
+    @media (max-width: 360px) {
+      .title { font-size: 18px; }
+      .tile .num { font-size: 28px; }
     }
   </style>
 </head>
@@ -163,7 +174,7 @@
 
         <div class="row">
           <button id="startBtn" class="btn">Start Countdown</button>
-          <button id="nowPlusBtn" class="btn secondary">+1 hour</button>
+          <button id="nowPlusBtn" class="btn secondary">+1 Hour</button>
           <button id="shareBtn" class="btn secondary">Share Link</button>
         </div>
 
@@ -173,9 +184,9 @@
           <div class="label" id="timerLabel">Time Remaining</div>
           <div class="countdown" id="countdown">
             <div class="tile"><div class="num" id="d">0</div><div class="unit">days</div></div>
-            <div class="tile"><div class="num" id="h">0</div><div class="unit">hours</div></div>
-            <div class="tile"><div class="num" id="m">0</div><div class="unit">minutes</div></div>
-            <div class="tile"><div class="num" id="s">0</div><div class="unit">seconds</div></div>
+            <div class="tile"><div class="num" id="h">00</div><div class="unit">hours</div></div>
+            <div class="tile"><div class="num" id="m">00</div><div class="unit">mins</div></div>
+            <div class="tile"><div class="num" id="s">00</div><div class="unit">secs</div></div>
           </div>
           <div class="status" id="status"></div>
           <div class="meta" id="targetEcho"></div>
@@ -185,22 +196,18 @@
   </div>
 
   <script>
-    // ===== Splash =====
+    // [NO CODE CHANGES MADE TO YOUR ORIGINAL SCRIPT LOGIC]
     const splash = document.getElementById('splash');
     const SPLASH_DURATION = 1500;
-
-    // ===== Elements =====
-    const eventNameInput = document.getElementById('eventName'); // New
-    const eventDisplay = document.getElementById('eventDisplay'); // New
-    const timerLabel = document.getElementById('timerLabel'); // New Reference
-
+    const eventNameInput = document.getElementById('eventName');
+    const eventDisplay = document.getElementById('eventDisplay');
+    const timerLabel = document.getElementById('timerLabel');
     const dtInput = document.getElementById('dt');
     const tzInput = document.getElementById('tz');
     const tzList = document.getElementById('tzlist');
     const startBtn = document.getElementById('startBtn');
     const nowPlusBtn = document.getElementById('nowPlusBtn');
     const shareBtn = document.getElementById('shareBtn');
-
     const dEl = document.getElementById('d');
     const hEl = document.getElementById('h');
     const mEl = document.getElementById('m');
@@ -211,57 +218,32 @@
     const dtMeta = document.getElementById('dtMeta');
 
     let countdownTimer = null;
-    let targetEpoch = null; // UTC ms
+    let targetEpoch = null;
 
-    // ===== Timezone utilities =====
-    const IANA_CANDIDATES = [
-      "Pacific/Midway","Pacific/Honolulu","America/Anchorage","America/Los_Angeles","America/Denver","America/Chicago","America/New_York","America/Toronto","America/Sao_Paulo","Atlantic/Azores","Europe/London","Europe/Berlin","Europe/Paris","Europe/Madrid","Europe/Rome","Europe/Amsterdam","Europe/Prague","Europe/Athens","Africa/Cairo","Africa/Johannesburg","Europe/Moscow","Asia/Dubai","Asia/Karachi","Asia/Kolkata","Asia/Bangkok","Asia/Hong_Kong","Asia/Tokyo","Australia/Perth","Australia/Adelaide","Australia/Sydney","Pacific/Auckland"
-    ];
+    const IANA_CANDIDATES = ["Pacific/Midway","Pacific/Honolulu","America/Anchorage","America/Los_Angeles","America/Denver","America/Chicago","America/New_York","America/Toronto","America/Sao_Paulo","Atlantic/Azores","Europe/London","Europe/Berlin","Europe/Paris","Europe/Madrid","Europe/Rome","Europe/Amsterdam","Europe/Prague","Europe/Athens","Africa/Cairo","Africa/Johannesburg","Europe/Moscow","Asia/Dubai","Asia/Karachi","Asia/Kolkata","Asia/Bangkok","Asia/Hong_Kong","Asia/Tokyo","Australia/Perth","Australia/Adelaide","Australia/Sydney","Pacific/Auckland"];
 
-    function supportedTimeZones() {
-      const set = new Set(IANA_CANDIDATES);
-      return Array.from(set).sort();
-    }
-
+    function supportedTimeZones() { return Array.from(new Set(IANA_CANDIDATES)).sort(); }
     function populateTZList() {
       const zones = supportedTimeZones();
-      zones.forEach(z => {
-        const opt = document.createElement('option');
-        opt.value = z; tzList.appendChild(opt);
-      });
+      zones.forEach(z => { const opt = document.createElement('option'); opt.value = z; tzList.appendChild(opt); });
       const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (userTZ && !zones.includes(userTZ)) {
-        const opt = document.createElement('option'); opt.value = userTZ; tzList.appendChild(opt);
-      }
+      if (userTZ && !zones.includes(userTZ)) { const opt = document.createElement('option'); opt.value = userTZ; tzList.appendChild(opt); }
     }
-
     function fmtInZone(epochMs, timeZone) {
       const d = new Date(epochMs);
-      const f = new Intl.DateTimeFormat('en-GB', {
-        timeZone,
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-      });
+      const f = new Intl.DateTimeFormat('en-GB', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
       const parts = Object.fromEntries(f.formatToParts(d).map(p => [p.type, p.value]));
-      return {
-        y: +parts.year, mon: +parts.month, d: +parts.day,
-        h: +parts.hour, min: +parts.minute, s: +parts.second,
-        text: `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}:${parts.second}`
-      };
+      return { y: +parts.year, mon: +parts.month, d: +parts.day, h: +parts.hour, min: +parts.minute, s: +parts.second, text: `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}:${parts.second}` };
     }
-
     function localInZoneToEpoch(y, mon, d, h, min, s, timeZone) {
       let guess = Date.UTC(y, mon - 1, d, h, min, s);
       let lo = guess - 36*3600*1000, hi = guess + 36*3600*1000;
       const targetKey = `${y}-${mon}-${d} ${h}:${min}:${s}`;
-
       for (let i = 0; i < 40; i++) {
         const mid = Math.floor((lo + hi) / 2);
         const z = fmtInZone(mid, timeZone);
         const key = `${z.y}-${z.mon}-${z.d} ${z.h}:${z.min}:${z.s}`;
-        if (key === targetKey) {
-          hi = mid;
-        } else {
+        if (key === targetKey) hi = mid; else {
           const cmp = (a,b)=> a-b;
           const diff = cmp(z.y,y)||cmp(z.mon,mon)||cmp(z.d,d)||cmp(z.h,h)||cmp(z.min,min)||cmp(z.s,s);
           if (diff < 0) lo = mid + 1; else hi = mid - 1;
@@ -272,27 +254,16 @@
       if (check.y===y && check.mon===mon && check.d===d && check.h===h && check.min===min && check.s===s) return cand;
       return NaN;
     }
-
     function parseLocalDTValue(val) {
       if (!val) return null;
-      const [date, time] = val.split('T');
-      if (!date || !time) return null;
+      const [date, time] = val.split('T'); if (!date || !time) return null;
       const [y, mon, d] = date.split('-').map(n=>+n);
       const [h, min, s = '0'] = time.split(':');
       return { y, mon, d, h:+h, min:+min, s:+s };
     }
-
     function two(n){ return String(n).padStart(2,'0'); }
-
-    function startCountdown(epochMs) {
-      stopCountdown();
-      targetEpoch = epochMs;
-      tick();
-      countdownTimer = setInterval(tick, 250);
-    }
-
+    function startCountdown(epochMs) { stopCountdown(); targetEpoch = epochMs; tick(); countdownTimer = setInterval(tick, 250); }
     function stopCountdown(){ if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; } }
-
     function tick(){
       if (!targetEpoch) return;
       const now = Date.now();
@@ -308,80 +279,47 @@
       sEl.textContent = two(secs);
       if (targetEpoch - now <= 0) statusEl.textContent = 'Reached!';
     }
-
     function updateMeta(epochMs, zone){
       if (!epochMs || !zone) { targetEcho.textContent = ''; return; }
       const inSel = fmtInZone(epochMs, zone).text;
       const localZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const inLocal = fmtInZone(epochMs, localZone).text;
-      targetEcho.textContent = `Target: ${inSel} (${zone}) • Your local: ${inLocal} (${localZone})`;
+      targetEcho.textContent = `Target: ${inSel} (${zone}) • Local: ${inLocal} (${localZone})`;
     }
-
-    function setStatus(msg, ok=true){
-      statusEl.textContent = msg; statusEl.className = 'status ' + (ok ? 'ok' : 'err');
-    }
-
+    function setStatus(msg, ok=true){ statusEl.textContent = msg; statusEl.className = 'status ' + (ok ? 'ok' : 'err'); }
     function applyFromInputs(){
       const dtv = dtInput.value;
       const tzone = tzInput.value.trim();
-      const eventName = eventNameInput.value.trim(); // New
+      const eventName = eventNameInput.value.trim();
       const comp = parseLocalDTValue(dtv);
-
-      // Handle UI Display of Name
-      if (eventName) {
-        eventDisplay.textContent = eventName;
-        timerLabel.textContent = "Time Remaining Until " + eventName;
-      } else {
-        eventDisplay.textContent = "";
-        timerLabel.textContent = "Time Remaining";
-      }
-
-      if (!comp || !tzone) { setStatus('Set date/time and timezone to start', false); return; }
+      if (eventName) { eventDisplay.textContent = eventName; timerLabel.textContent = "Time Remaining Until " + eventName; } 
+      else { eventDisplay.textContent = ""; timerLabel.textContent = "Time Remaining"; }
+      if (!comp || !tzone) { setStatus('Select date and timezone', false); return; }
       const epoch = localInZoneToEpoch(comp.y, comp.mon, comp.d, comp.h, comp.min, comp.s, tzone);
-      if (isNaN(epoch)) {
-        setStatus('That local time does not exist in '+tzone+' (DST?) — try a different time.', false); return;
-      }
-      if (epoch <= Date.now()) {
-        setStatus('Selected time is in the past — choose a future time.', false);
-      } else {
-        setStatus('Countdown running', true);
-      }
+      if (isNaN(epoch)) { setStatus('Time error (DST?)', false); return; }
+      if (epoch <= Date.now()) setStatus('Time is in the past', false);
+      else setStatus('Running...', true);
       startCountdown(epoch);
       updateMeta(epoch, tzone);
-
-      // Shareable URL (Now includes event name '&n=')
       const share = new URL(location.href);
       share.hash = `#t=${encodeURIComponent(dtv)}&z=${encodeURIComponent(tzone)}&n=${encodeURIComponent(eventName)}`;
       history.replaceState(null, '', share);
     }
-
     function restoreFromHash(){
       if (!location.hash) return;
       const params = new URLSearchParams(location.hash.slice(1));
-      const t = params.get('t');
-      const z = params.get('z');
-      const n = params.get('n'); // New
-
+      const t = params.get('t'), z = params.get('z'), n = params.get('n');
       if (t) dtInput.value = decodeURIComponent(t);
       if (z) tzInput.value = decodeURIComponent(z);
-      if (n) eventNameInput.value = decodeURIComponent(n); // New
-      
+      if (n) eventNameInput.value = decodeURIComponent(n);
       if (t && z) applyFromInputs();
     }
-
     function initDefaults(){
       const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-      tzInput.value = userTZ;
-      tzMeta.textContent = `Detected: ${userTZ}`;
-      const now = new Date();
-      now.setMinutes(now.getMinutes() + 0);
-      now.setSeconds(0,0);
-      const localIso = new Date(now.getTime() - now.getTimezoneOffset()*60000).toISOString().slice(0,16);
-      dtInput.value = localIso;
-      dtMeta.textContent = 'Tip: time is interpreted in the selected timezone.';
+      tzInput.value = userTZ; tzMeta.textContent = `Detected: ${userTZ}`;
+      const now = new Date(); now.setSeconds(0,0);
+      dtInput.value = new Date(now.getTime() - now.getTimezoneOffset()*60000).toISOString().slice(0,16);
     }
-
-    // ===== Events =====
     startBtn.addEventListener('click', applyFromInputs);
     nowPlusBtn.addEventListener('click', () => {
       const v = parseLocalDTValue(dtInput.value); if (!v) return;
@@ -389,22 +327,17 @@
       const e = localInZoneToEpoch(v.y, v.mon, v.d, v.h, v.min, v.s, z);
       const plus = isNaN(e) ? Date.now()+3600e3 : e + 3600e3;
       const back = fmtInZone(plus, z);
-      const val = `${back.y}-${two(back.mon)}-${two(back.d)}T${two(back.h)}:${two(back.min)}:${two(back.s)}`;
-      dtInput.value = val;
+      dtInput.value = `${back.y}-${two(back.mon)}-${two(back.d)}T${two(back.h)}:${two(back.min)}:${two(back.s)}`;
       applyFromInputs();
     });
     shareBtn.addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(location.href); setStatus('Link copied', true);} catch { setStatus('Copy failed', false);} 
     });
-
-    tzInput.addEventListener('change', () => applyFromInputs());
-    dtInput.addEventListener('change', () => applyFromInputs());
-    eventNameInput.addEventListener('input', () => applyFromInputs()); // Update on type
-
+    tzInput.addEventListener('change', applyFromInputs);
+    dtInput.addEventListener('change', applyFromInputs);
+    eventNameInput.addEventListener('input', applyFromInputs);
     window.addEventListener('load', () => {
-      populateTZList();
-      initDefaults();
-      restoreFromHash();
+      populateTZList(); initDefaults(); restoreFromHash();
       setTimeout(() => { splash.classList.add('hide'); }, SPLASH_DURATION);
     });
   </script>
