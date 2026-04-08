@@ -237,6 +237,7 @@
     let countdownTimer = null;
     let targetEpoch = null;
     let alarmPlayed = false;
+    let audioCtx = null; // Stored to reuse context on iOS
 
     const IANA_CANDIDATES = ["Pacific/Midway","Pacific/Honolulu","America/Anchorage","America/Los_Angeles","America/Denver","America/Chicago","America/New_York","America/Toronto","America/Sao_Paulo","Atlantic/Azores","Europe/London","Europe/Berlin","Europe/Paris","Europe/Madrid","Europe/Rome","Europe/Amsterdam","Europe/Prague","Europe/Athens","Africa/Cairo","Africa/Johannesburg","Europe/Moscow","Asia/Dubai","Asia/Karachi","Asia/Kolkata","Asia/Bangkok","Asia/Hong_Kong","Asia/Tokyo","Australia/Perth","Australia/Adelaide","Australia/Sydney","Pacific/Auckland"];
 
@@ -248,17 +249,32 @@
       if (userTZ && !zones.includes(userTZ)) { const opt = document.createElement('option'); opt.value = userTZ; tzList.appendChild(opt); }
     }
     
+    // PRIME AUDIO ON USER GESTURE (For iOS compatibility)
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // Play an empty buffer to wake up the audio system
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        source.start(0);
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
     // Audio Beep Logic
     function playBeep() {
-      if (!alarmToggle.checked || alarmPlayed) return;
+      if (!alarmToggle.checked || alarmPlayed || !audioCtx) return;
       try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
         gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
         gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.1);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
@@ -308,7 +324,7 @@
     function startCountdown(epochMs) { 
       stopCountdown(); 
       targetEpoch = epochMs; 
-      alarmPlayed = false; // Reset alarm flag for new countdown
+      alarmPlayed = false; 
       tick(); 
       countdownTimer = setInterval(tick, 250); 
     }
@@ -348,6 +364,7 @@
     function setStatus(msg, ok=true){ statusEl.textContent = msg; statusEl.className = 'status ' + (ok ? 'ok' : 'err'); }
 
     function applyFromInputs(){
+      initAudio(); // Initialize on click
       const dtv = dtInput.value;
       const tzone = tzInput.value.trim();
       const eventName = eventNameInput.value.trim();
@@ -386,6 +403,7 @@
 
     startBtn.addEventListener('click', applyFromInputs);
     nowPlusBtn.addEventListener('click', () => {
+      initAudio(); // Initialize on click
       const v = parseLocalDTValue(dtInput.value); if (!v) return;
       const z = tzInput.value || Intl.DateTimeFormat().resolvedOptions().timeZone;
       const e = localInZoneToEpoch(v.y, v.mon, v.d, v.h, v.min, v.s, z);
